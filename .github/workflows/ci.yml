@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Colon shard xsmall test
+        run: uv run python tests/test_colon_shard_xsmall.py
+      - name: Smoke colon milume notebook
+        run: uv run python tests/smoke_colon_a2.py

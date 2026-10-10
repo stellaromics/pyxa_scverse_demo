@@ -17,4 +17,26 @@ uv run marimo edit 3_colon_3d_milume.py
 
 The build downloads ~22.5 GB from the Hub, writes a ~13 GB SpatialData store to `data/`, and peaks at ~30 GB of memory.
 
+### Reshard an existing store (no Pyxa rebuild)
+
+If you already have `colon_a2.sdata.zarr` locally (for example after an earlier build), re-encode images and `labels/cell_labels` with Zarr v3 shards and consolidated metadata:
+
+```
+uv run python build_colon_a2.py --reshard ~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr --reshard-in-place --layout-report
+```
+
+To write a new path instead of replacing in place, use `--reshard-out`.
+
+### Upload the sharded store to Hugging Face (Clarence's Mac)
+
+After resharding, publish the unzipped SpatialData zarr folder to the `Stellaromics/demo` dataset. Use `upload_large_folder` so many small shard files are batched and resumable ([Hub limits](https://huggingface.co/docs/hub/repositories-recommendations): **10,000 entries per directory** hard cap on push; **100,000 files per repo** recommended).
+
+```bash
+# once: huggingface-cli login  (or export HF_TOKEN=...)
+uv run python scripts/upload_colon_a2_hf.py \
+  ~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr
+```
+
+The script calls ``HfApi.upload_large_folder`` when your installed ``huggingface_hub`` still provides it; otherwise it uses ``upload_folder`` (the current large-folder uploader in huggingface_hub 2.x).
+
 Data: [Stellaromics/demo](https://huggingface.co/datasets/Stellaromics/demo) on Hugging Face.
