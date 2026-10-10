@@ -132,10 +132,21 @@ def main() -> None:
             # marimo export runs the notebook in its own kernel, so export a temporary copy whose
             # widget cell adds the landmarks instead of patching the class.
             source = (ROOT / "colon_a2.py").read_text()
-            hook = "    landmarks = mo.ui.anywidget(widget)\n"
+            hook = (
+                "    landmarks = mo.ui.anywidget(\n"
+                "        peek(sdata, color=CELL_TYPE, genes=marker_genes, contrast_limits=(40, 255))\n"
+                "    )\n"
+            )
             assert hook in source
             copy = ROOT / "_colon_a2_export.py"
-            copy.write_text(source.replace(hook, f"    widget.landmarks = {USER_LANDMARKS!r}\n" + hook))
+            copy.write_text(
+                source.replace(
+                    hook,
+                    "    widget = peek(sdata, color=CELL_TYPE, genes=marker_genes, contrast_limits=(40, 255))\n"
+                    f"    widget.landmarks = {USER_LANDMARKS!r}\n"
+                    "    landmarks = mo.ui.anywidget(widget)\n",
+                )
+            )
             try:
                 subprocess.run(
                     [sys.executable, "-m", "marimo", "export", "html", str(copy), "-o", str(args.html), "--force",

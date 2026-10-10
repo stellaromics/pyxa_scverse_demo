@@ -1762,7 +1762,7 @@ wheels = [
 
 [[package]]
 name = "milume"
-version = "1.1.0"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anndata" },
@@ -1776,9 +1776,9 @@ dependencies = [
     { name = "shapely" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/46/c724779e625519fded01aceb8af4f561d6693c97969ebd197d1682c7135a/milume-1.1.0.tar.gz", hash = "sha256:ca99152214d94862536e2dcc69dac96a4c0c5c1e6a0cb61d6ff219991c6415b8", size = 6108107, upload-time = "2026-09-30T19:28:55.682Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/7f/5173cd5865e3a9a6a8bd542edbd8eabe80e0a4a9bcb642882be86ec4849c/milume-1.3.0.tar.gz", hash = "sha256:b6859eab994af9248aff86105fe854a53d83fe3e12151f033261091d84c91f63", size = 11793745, upload-time = "2026-10-10T06:40:08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/16/45b4f9dc093be80f84b608c846984039703f272539d0e24a4cf97e763cd3/milume-1.1.0-py3-none-any.whl", hash = "sha256:80935544db8f61077dae21851932794d72caadb4602780d82c072d65254f9b2f", size = 1411475, upload-time = "2026-09-30T19:28:53.996Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/57/54748566ec2cf0de64bb0f9c91644402064180f84085daeb0e9b3987327c/milume-1.3.0-py3-none-any.whl", hash = "sha256:fed3c29d77c54cd5e6d4b9e25f0b4860cecd244ecf384c1151684bf16eb81033", size = 1436642, upload-time = "2026-10-10T06:40:05Z" },
 ]
 
 [[package]]
@@ -3206,7 +3206,7 @@ requires-dist = [
     { name = "huggingface-hub" },
     { name = "marimo", specifier = ">=0.25.0" },
     { name = "matplotlib" },
-    { name = "milume", specifier = ">=1.1.0" },
+    { name = "milume", specifier = ">=1.3.0" },
     { name = "spatialdata-io", editable = "../spatialdata-io" },
 ]
 

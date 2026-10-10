@@ -21,16 +21,16 @@ def _():
 
     import colon_a2_common as common
     from colon_a2_common import CELL_TYPE, apply_mpl_theme, load_colon_a2, tool_icon
-    from milume import LandmarksWidget, landmarks_to_geodataframe
+    from milume import landmarks_to_geodataframe, peek
 
     return (
         CELL_TYPE,
-        LandmarksWidget,
         apply_mpl_theme,
         common,
         landmarks_to_geodataframe,
         load_colon_a2,
         mo,
+        peek,
         tool_icon,
     )
 
@@ -63,9 +63,10 @@ def _(load_colon_a2):
 
 
 @app.cell(expand_output=True)
-def _(CELL_TYPE, LandmarksWidget, marker_genes, mo, sdata):
-    widget = LandmarksWidget(sdata, color=CELL_TYPE, genes=marker_genes, contrast_limits=(40, 255))
-    landmarks = mo.ui.anywidget(widget)
+def _(CELL_TYPE, marker_genes, mo, peek, sdata):
+    landmarks = mo.ui.anywidget(
+        peek(sdata, color=CELL_TYPE, genes=marker_genes, contrast_limits=(40, 255))
+    )
     landmarks
     return (landmarks,)
 
