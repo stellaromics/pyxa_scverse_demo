@@ -7,7 +7,13 @@ Pyxa ``Analysis Group`` directory. The reader returns the table, the mosaic (rea
 in place) and 3D cell labels drawn onto the mosaic's grid; this script keeps the cells Pyxa
 Studio kept and writes ``data/colon_a2.sdata.zarr``.
 
+Images and labels are written as Zarr v3 with sharded OME-NGFF (16–64 MB shards; 256² / 64³
+inner chunks). Use ``--reshard`` on an existing local store (for example Clarence's
+``~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr``) to re-encode
+rasters without rebuilding from raw Pyxa files.
+
     uv run python build_colon_a2.py --download --overwrite
+    uv run python build_colon_a2.py --reshard ~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr --reshard-in-place
 """
 
 from __future__ import annotations
@@ -17,8 +23,10 @@ import json
 import time
 from pathlib import Path
 
-from spatialdata import SpatialData
+from spatialdata import SpatialData, read_zarr
 from spatialdata_io.experimental import pyxa
+
+from colon_a2_sharding import measure_store_layout, reshard_spatialdata_store, write_sharded_spatialdata
 
 DATA = Path(__file__).resolve().parent / "data"
 HF_REPO = "Stellaromics/demo"
@@ -57,26 +65,81 @@ def read(source: Path) -> SpatialData:
     return pyxa(source, cell_assigned_gene=False, labels=True)
 
 
+def _filter_studio_cells(sdata: SpatialData) -> SpatialData:
+    """Drop cells without a Pyxa Studio ``Cluster`` when that column exists (colon only)."""
+    table = sdata.tables["rna"]
+    if "Cluster" not in table.obs.columns:
+        return sdata
+    sdata.tables["rna"] = table[table.obs["Cluster"].notna()].copy()
+    return sdata
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Hub folder or Pyxa 'Analysis Group'")
     parser.add_argument("--download", action="store_true", help=f"fetch {HF_REPO}/{HF_FOLDER} into --source first")
     parser.add_argument("--out", type=Path, default=OUT)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--reshard",
+        type=Path,
+        metavar="STORE",
+        help="re-encode an existing SpatialData zarr with sharded images/labels (no Pyxa rebuild)",
+    )
+    parser.add_argument(
+        "--reshard-out",
+        type=Path,
+        metavar="PATH",
+        help="output path for --reshard (default: same as --reshard)",
+    )
+    parser.add_argument(
+        "--reshard-in-place",
+        action="store_true",
+        help="replace --reshard store atomically (writes to a temp dir, then swaps)",
+    )
+    parser.add_argument("--layout-report", action="store_true", help="print file/shard layout stats after writing")
     args = parser.parse_args()
+
+    if args.reshard is not None:
+        t0 = time.perf_counter()
+        out = reshard_spatialdata_store(
+            args.reshard,
+            args.reshard_out,
+            in_place=args.reshard_in_place,
+            overwrite=args.overwrite or args.reshard_in_place,
+        )
+        sdata = read_zarr(out)
+        elapsed = time.perf_counter() - t0
+        summary = {
+            "mode": "reshard",
+            "out": str(out),
+            "n_obs": sdata.tables["rna"].n_obs,
+            "labels": list(sdata.labels),
+            "images": list(sdata.images),
+            "seconds": round(elapsed, 1),
+        }
+        if args.layout_report:
+            summary["layout"] = measure_store_layout(out).as_dict()
+        print(json.dumps(summary, indent=1))
+        return
+
     if args.download:
         args.source = download(args.source)
 
-    sdata = read(args.source)
-    table = sdata.tables["rna"]
-    # Studio drops cells that fail Pyxa's filters; they carry no cluster. Their labels stay drawn.
-    sdata.tables["rna"] = table[table.obs["Cluster"].notna()].copy()
+    sdata = _filter_studio_cells(read(args.source))
     t0 = time.perf_counter()
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    sdata.write(args.out, overwrite=args.overwrite)
-    print(f"wrote {args.out} in {time.perf_counter() - t0:.0f} s", flush=True)
-    kept = sdata.tables["rna"]
-    summary = {"out": str(args.out), "n_obs": kept.n_obs, "labels": list(sdata.labels), "images": list(sdata.images)}
+    write_sharded_spatialdata(sdata, args.out, overwrite=args.overwrite)
+    elapsed = time.perf_counter() - t0
+    summary = {
+        "out": str(args.out),
+        "n_obs": sdata.tables["rna"].n_obs,
+        "labels": list(sdata.labels),
+        "images": list(sdata.images),
+        "seconds": round(elapsed, 1),
+    }
+    if args.layout_report:
+        summary["layout"] = measure_store_layout(args.out).as_dict()
     print(json.dumps(summary, indent=1))
 
 

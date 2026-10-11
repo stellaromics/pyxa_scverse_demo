@@ -5,6 +5,8 @@ description = "Read Stellaromics Pyxa output into SpatialData and analyse it wit
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    # Pinned: colon_a2_sharding calls spatialdata._io.io_raster._write_raster with shards in storage_options.
+    "spatialdata==0.8.0",
     "spatialdata-io",
     "fsspec",
     "huggingface-hub",
@@ -17,5 +19,5 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-# the pyxa reader is on the pyxa-reader branch, pending upstream review; use a local checkout until it is pushed
-spatialdata-io = { path = "../spatialdata-io", editable = true }
+# pyxa reader (pyxa-reader branch); override with a local path checkout when developing spatialdata-io
+spatialdata-io = { git = "https://github.com/ckmah/spatialdata-io", rev = "9a85304fc2f11f04e187f161c399dfb3a7900b3c" }
