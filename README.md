@@ -29,14 +29,22 @@ To write a new path instead of replacing in place, use `--reshard-out`.
 
 ### Upload the sharded store to Hugging Face (Clarence's Mac)
 
-After resharding, publish the unzipped SpatialData zarr folder to the `Stellaromics/demo` dataset. Use `upload_large_folder` so many small shard files are batched and resumable ([Hub limits](https://huggingface.co/docs/hub/repositories-recommendations): **10,000 entries per directory** hard cap on push; **100,000 files per repo** recommended).
+After resharding, publish the unzipped SpatialData zarr folder to the `Stellaromics/demo` dataset ([Hub limits](https://huggingface.co/docs/hub/repositories-recommendations): **10,000 entries per directory** hard cap on push; **100,000 files per repo** recommended).
+
+With **huggingface_hub 2.x** (this repo's lockfile), use ``HfApi.upload_folder`` / ``hf upload`` and set ``path_in_repo`` so the store lands at ``colon_a2.sdata.zarr/`` in the dataset:
 
 ```bash
-# once: huggingface-cli login  (or export HF_TOKEN=...)
+# once: hf auth login  (or export HF_TOKEN=...)
 uv run python scripts/upload_colon_a2_hf.py \
+  ~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr
+
+# inspect the plan for your installed huggingface_hub (no upload):
+uv run python scripts/upload_colon_a2_hf.py --dry-run \
   ~/scverse_conference_2026/pyxa_scverse_demo/data/colon_a2.sdata.zarr
 ```
 
-The script calls ``HfApi.upload_large_folder`` when your installed ``huggingface_hub`` still provides it; otherwise it uses ``upload_folder`` (the current large-folder uploader in huggingface_hub 2.x).
+Older ``huggingface_hub`` releases had ``upload_large_folder`` / ``hf upload-large-folder`` without ``path_in_repo``; the script stages a parent directory when that API is present.
+
+**Opening the store:** with **spatialdata 0.8.0**, ``spatialdata.read_zarr`` expects a local path or fsspec-backed store, not a bare ``https://`` dataset URL. Download or mount the zarr folder first (for example ``hf download``), then ``read_zarr`` the local directory.
 
 Data: [Stellaromics/demo](https://huggingface.co/datasets/Stellaromics/demo) on Hugging Face.

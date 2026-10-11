@@ -11,7 +11,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-import numpy as np
+import dask.array as da
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -41,7 +41,11 @@ def _assert_raster_equal(a, b, label: str) -> None:
         oa = a[scale].values().__iter__().__next__()
         ba = b[scale].values().__iter__().__next__()
         assert oa.shape == ba.shape, f"{label}/{scale} shape"
-        assert np.array_equal(np.asarray(oa), np.asarray(ba)), f"{label}/{scale} pixels"
+        left = da.asarray(oa.data)
+        right = da.asarray(ba.data)
+        if left.chunks != right.chunks:
+            right = right.rechunk(left.chunksize)
+        assert bool(da.all(left == right).compute()), f"{label}/{scale} pixels"
 
 
 def main() -> None:
@@ -54,6 +58,11 @@ def main() -> None:
         tmp_path = Path(tmp)
         raw = _download_xsmall_raw(tmp_path / "hf")
         reference = pyxa(raw, labels=True)
+        from build_colon_a2 import _filter_studio_cells
+
+        before = reference.tables["rna"].n_obs
+        reference = _filter_studio_cells(reference)
+        assert reference.tables["rna"].n_obs == before, "xsmall has no Cluster column"
         plain = tmp_path / "xsmall_plain.sdata.zarr"
         sharded = tmp_path / "xsmall_sharded.sdata.zarr"
         reference.write(plain, overwrite=True)

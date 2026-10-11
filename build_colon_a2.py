@@ -66,7 +66,10 @@ def read(source: Path) -> SpatialData:
 
 
 def _filter_studio_cells(sdata: SpatialData) -> SpatialData:
+    """Drop cells without a Pyxa Studio ``Cluster`` when that column exists (colon only)."""
     table = sdata.tables["rna"]
+    if "Cluster" not in table.obs.columns:
+        return sdata
     sdata.tables["rna"] = table[table.obs["Cluster"].notna()].copy()
     return sdata
 

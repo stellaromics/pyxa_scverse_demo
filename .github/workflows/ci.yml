@@ -17,5 +17,7 @@ jobs:
         run: uv sync
       - name: Colon shard xsmall test
         run: uv run python tests/test_colon_shard_xsmall.py
+      - name: Hub upload plan (huggingface_hub API)
+        run: uv run python tests/test_upload_colon_hf.py
       - name: Smoke colon milume notebook
         run: uv run python tests/smoke_colon_a2.py
