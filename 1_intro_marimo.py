@@ -13,7 +13,7 @@ app = marimo.App()
 
 
 @app.cell
-def _():
+def _(:
     import marimo as mo
 
     mo.md("# Welcome to marimo! 🌊🍃")
