@@ -1,0 +1,35 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  milume-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-milume-pins.sh
+
+  marimo-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uvx marimo@0.25.0 check 1_intro_marimo.py 2_pyxa_spatialdata.py 3_colon_3d_milume.py
+
+  # Runs every cell of the colon notebook on synthetic data from annotations/ (no download),
+  # with the notebook's own PEP 723 dependencies.
+  smoke-colon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv export --script 3_colon_3d_milume.py --no-hashes > "$RUNNER_TEMP/colon-reqs.txt"
+      - run: uv run --no-project --python 3.12 --with-requirements "$RUNNER_TEMP/colon-reqs.txt" python tests/smoke_colon_a2.py
